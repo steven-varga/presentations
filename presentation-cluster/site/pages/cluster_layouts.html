@@ -1,0 +1,35 @@
+
+
+<section>
+<img src="pix/nfa.gif" height="200" style="float:left;" >
+	<h3>What sort of clusters can I create</h3>
+	<section>
+		<ul>
+			<li class="fragment">cluster start
+				<span class="fragment">--name homogeneous --instance-type c3.large</span>
+				<span class="fragment">--ip 52.2.17.127 </span>
+				<span class="fragment">--io-servers 1</span>
+				<span class="fragment">--bid-price .1 --size 10</span>
+			</li>
+			<li class="fragment">cluster start
+				<span class="fragment">--name heterogeneous --instance-type c3.large</span>
+				<span class="fragment">--ip 52.2.17.127 </span>
+				<span class="fragment">--io-servers 1</span>
+				<span class="fragment">--bid-price .1 --size 1</span>
+				<span class="fragment">--no-configure</span>
+			</li>
+			<li class="fragment">cluster add
+				<span class="fragment">--name heterogeneous --instance-type m5d.metal</span>
+				<span class="fragment">--io-servers 3</span>
+				<span class="fragment">--bid-price 1.5 --size 10</span>
+				<span class="fragment">--no-configure</span>
+			</li>
+			<li class="fragment">cluster add
+				<span class="fragment">--name heterogeneous --instance-type c5d.18xlarge</span>
+				<span class="fragment">--io-servers 0</span>
+				<span class="fragment">--bid-price 1.5 --size 10</span>
+			</li>
+			<li class="fragment">cluster configure --name heterogeneous</li>
+		</ul>
+	</section>
+</section>

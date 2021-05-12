@@ -1,0 +1,242 @@
+<!-- h5cpp.org -->
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>H5CLUSTER</title>
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/solarized.css">
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/solarized-dark.css">
+        <link rel="stylesheet" type="text/css" href="plugin/asciinema/asciinema-player.css" />
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+		<link rel="stylesheet" href="plugin/reveal.js-fullscreen-code/reveal.js-fullscreen-code.css">
+
+		<style>
+		  .reveal .slides section .fragment.current-only {
+			opacity: 1;
+			visibility: visible;
+			display: none;
+		  }
+		  .reveal .slides section .fragment.current-only.current-fragment {
+			display: block;
+		  }
+		  .line { display: block; }
+		  .line.focus { background: #f2df82; color: #657b83; }
+	</style>
+
+	</head>
+	<body>
+
+<div class="reveal">
+<div class="slides">
+
+<section>
+	<h5>H5CLUSTER, an HPC cluster for</h5>
+	<h1>Workshops, Demonstrations and Performance tests</h1>
+	<p><small>Copywrite <a href="http://h5cpp.ca">VargaConsulting, 2019-2020, Toronto, ON, Canada</a></small></p>
+</section>
+
+<section data-transition="zoom">
+	<h2>Outline</h2>
+	<p class="fragment">Features</p>
+	<p class="fragment">Components</p>
+	<p class="fragment">Operating Cost</p>
+	<p class="fragment">Technical Details</p>
+</section>
+
+<section data-background="pix/vs-code-background.png"  data-transition="zoom">
+	<h2>FEATURES</h2>
+	<p class="fragment"> <a href="https://code.visualstudio.com/">Web Based IDE, and Terminal Access</a>
+		no PKI/SSH needed</p>
+	<p class="fragment"> <a href="https://aws.amazon.com/iam/">AWS IAM based user managment for HDFGroup members</a>
+		to upload public keys for SSH terminal access</p>
+	<p class="fragment"> <a href="https://spack.io/">S3 based Centralized software repository</a>
+		to install once, use everywhere: system and tutorials, usable from localhosts</p>
+	<p class="fragment"><a href="http://www.orangefs.org/">Orange FS</a>
+   	parallel filesystem with S3, Ephemeral, Elastic Block Device backing, upto 16EiB</p>
+	<p class="fragment">New code base to facilitate</p>
+		<small class="fragment"><ul>
+			<li>integration of additional file services: EFS, NFS, S3 general...</li>
+			<li>moving to alternative IAAS: Azure, Google cloud, ...</li>
+		</ul></small>
+	<p class="fragment">Ability to Stop/Hibernate Cluster</p>
+</section>
+<section data-transition="zoom">
+	<h2>S3 block storage</h2>
+	<p class="fragment">upto 160EiB, can be mounted locally</p>
+	<p class="fragment">is a linux block device, formatted to ext4: POSIX compliance</p>
+	<p class="fragment">30MB/sec - 2GB/sec Per HOST! </p>
+	<p class="fragment">is scalable</p>
+	<p class="fragment">2.5cents/GiB/month</p>
+</section>
+<section data-fullscreen>
+	<h6>S3 mkfs.ext4 and mount on localhost</h6>
+	<asciinema-player src="cast/s3-local-management.json" 
+		cols=200 rows=30 autoplay=1 loop=1 speed=1.5 idle-time-limit=.5 poster="npt:2:34"
+		font-size=medium theme=solarized-light>
+	</asciinema-player>
+</section>
+<section data-fullscreen>
+	<h6>S3: copy to EBS</h6>
+	<asciinema-player src="cast/s3-spack-to-ebs.json" 
+		cols=200 rows=30 autoplay=1 loop=1 speed=1.0 idle-time-limit=1.0 poster="npt:2:34"
+		font-size=medium theme=solarized-light>
+	</asciinema-player>
+</section>
+<section data-transition="zoom">
+	<h6>Web based login</h6>
+	<asciinema-player src="cast/s3-spack-to-ebs.json" 
+		cols=200 rows=30 autoplay=1 loop=1 speed=1.0 idle-time-limit=1.0 poster="npt:2:34"
+		font-size=medium theme=solarized-light>
+	</asciinema-player>
+</section>
+<section data-background-iframe="http://cluster.vargaconsulting.ca/using-cluster/#connecting-with-web-browser" data-background-interactive>
+	<h2>Documentation SITE</h2>
+	<p>ssh -L 8080:127.0.0.1:8080 master.vargaconsulting.ca</p>
+</section>
+<!--section data-background-iframe="http://127.0.0.1:8080" data-background-interactive-->
+<section style="width: 98%">
+	<p style="opacity: 0.1; width:100%; height:10%; text-align: right; ;">HDFGroup HUG2020</p>
+</section>
+
+<section data-fullscreen>
+	<h5>configuration: .aws/config</h5>
+	<pre><code data-trim data-noescape>
+	[default]
+	region = us-east-1
+	output = text
+
+	[cluster default]
+	SIZE: 1
+	ami: ami-02661544fe788b355
+	ipv4: 52.2.17.12 
+	intacence-type: m5d.large
+	availability-zone: us-east-1a
+	udp-ports:
+	tcp-ports: 22
+	bid-price: .10
+	hostname: master
+	
+	BEHAVIOR: stop
+	VOLUMES:   VOLUME-1, VOLUME-2 [, VOLUME-N]
+	SERVICES:  SERVICE-1 [, SERVICE-N]
+	NODES:  IO-NODES, COMPUTE-NODES
+
+	[node io-nodes] 
+		... 
+	[node compute-nodes]
+	    ... 
+	</code></pre>
+</section>
+<section data-fullscreen>
+	<h5>configuration: .aws/credentials</h5>
+	<pre><code data-trim data-noescape>
+	[default]
+## steven@hdfgroup
+aws_access_key_id = AK***************P7L
+aws_secret_access_key = h+Ag**********************************lo
+	</code></pre>
+</section>
+<section data-fullscreen>
+	<h6>cluster manager software</h6>
+	<asciinema-player src="cast/01-software.json" 
+		cols=200 rows=30 autoplay=1 loop=1 speed=1.5 idle-time-limit=.5 poster="npt:2:34"
+		font-size=medium theme=solarized-light>
+	</asciinema-player>
+</section>
+
+<section data-fullscreen>
+	<h6>starting up a cluster</h6>
+	<asciinema-player src="cast/02-cluster-start.json" 
+		cols=200 rows=30 autoplay=1 loop=1 speed=1.5 idle-time-limit=.5 poster="npt:2:34"
+		font-size=medium theme=solarized-light>
+	</asciinema-player>
+</section>
+<section data-fullscreen>
+	<h6>adding nodes to existing cluster</h6>
+	<asciinema-player src="cast/03-cluster-add-nodes.json" 
+		cols=200 rows=30 autoplay=1 loop=1 speed=1.5 idle-time-limit=.5 poster="npt:2:34"
+		font-size=medium theme=solarized-light>
+	</asciinema-player>
+</section>
+
+<section data-fullscreen>
+	<h6>system information</h6>
+	<asciinema-player src="cast/05-system.json" 
+		cols=200 rows=30 autoplay=1 loop=1 speed=1.5 idle-time-limit=.5 poster="npt:2:34"
+		font-size=medium theme=solarized-light>
+	</asciinema-player>
+</section>
+
+<section data-fullscreen>
+	<h6>POSIX IO performance on shared home</h6>
+	<asciinema-player src="cast/06-perf-local.json" 
+		cols=200 rows=30 autoplay=1 loop=1 speed=1.5 idle-time-limit=.5 poster="npt:2:34"
+		font-size=medium theme=solarized-light>
+	</asciinema-player>
+</section>
+
+<section data-transition="zoom">
+	<h4>instance types</h4>
+	<ul>
+		<li>c3.large - low cost, 2 cores, 2 ssd-s great for practice/modelling</li>
+		<li>m5d.metal ~USD1.00/hrs 96 cores 4xNVME disks 25Mb/sec net: cheap, but slow ~15mins startup+termination</li>
+		<li>i3.16xlarge ~USD1.5/hrs 8xNVME disks 25Mb/sec, great IO</li>
+		<li> ... </li>
+	</ul>
+</section>
+
+</div>
+</div>
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+		<script>
+
+			Reveal.initialize({ 
+				width: "1200",
+				
+				height: "900",
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+				transitionSpeed: 'slow',
+				transition: 'convex', // none/fade/slide/convex/concave/zoom
+				keyboard: true,
+				loop: false,
+				transition: 'concave', // default/cube/page/concave/linear(2d)
+				anything: [ {className: "asciicast",
+                           defaults: { theme: 'monokai', fontSize: '15px' },
+                           initialize: (function(container, options) {
+                                     asciinema.player.js.CreatePlayer(container, options.URL, options);
+                            })
+                }],
+				dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/zoom-js/zoom.js', async: true },
+					{ src: 'plugin/notes/notes.js', async: true },
+          			{ src: 'plugin/highlight/highlight.pack.js' },
+          			{ src: 'node_modules/reveal-code-focus/reveal-code-focus.js',  async:true, callback: function() { RevealCodeFocus(); } },
+		            { src: 'plugin/asciinema/asciinema-player.js' },
+		            { src: 'plugin/anything/anything.js' },
+					{ src: 'plugin/chalkboard/chalkboard.js' },
+					{ src: 'plugin/reveal.js-fullscreen-code/jquery-3.1.1.min.js' },
+            		{ src: 'plugin/reveal.js-fullscreen-code/reveal.js-fullscreen-code.js' }
+
+				],
+				keyboard: {
+					67: function() { RevealChalkboard.toggleNotesCanvas() },	// toggle notes canvas when 'c' is pressed
+					66: function() { RevealChalkboard.toggleChalkboard() },	// toggle chalkboard when 'b' is pressed
+					46: function() { RevealChalkboard.clear() },	// clear chalkboard when 'DEL' is pressed
+					 8: function() { RevealChalkboard.reset() },	// reset chalkboard data on current slide when 'BACKSPACE' is pressed
+					68: function() { RevealChalkboard.download() },	// downlad recorded chalkboard drawing when 'd' is pressed
+				},
+				});
+		</script>
+	</body>
+</html>
