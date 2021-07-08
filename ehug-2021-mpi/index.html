@@ -1,0 +1,220 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>EHUG 2021</title>
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/blood.css">
+		<link rel="stylesheet" href="plugin/chalkboard/style.css">
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.3/css/all.css">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="plugin/highlight/atom-one-dark.css">
+		<!--style>
+			.highlight-line {
+				background-color: rgb(94, 22, 22);
+			}
+		</style-->
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section data-markdown data-transition="zoom"  data-separator-notes="^Note:" ><textarea data-template>
+					## [Idiomatic MPI for modern C++](https://mpi-ehug2021.h5cpp.org)
+					## Lightning Talk
+					##### European HUG 2021 
+					##### https://github.com/steven-varga/mpi  
+					
+					* Steven Varga, independent researcher 
+					* Gerd Heber, collaborator, The HDFGroup  
+					
+					Note:
+					</textarea></section>				
+<section>
+	<h5> reworked 
+		<a href="https://github.com/mpitutorial/mpitutorial/blob/gh-pages/tutorials/mpi-send-and-receive/code/ring.c">ring.c</a> 
+		from 
+		<a href="https://mpitutorial.com/tutorials/mpi-send-and-receive/">
+			MPI tutorial
+		</a>
+	</h5>
+	<pre><code data-line-numbers="5,25|6,24,25|11|14|17|21,23"> <script type="text/template">
+	#include <mpi/all>
+	#include <iostream>
+
+	int main(int argc, char *argv[]) {
+		mpi::init(); 
+		int next = (mpi::rank() + 1) % mpi::size(),
+		prev = (mpi::rank() + mpi::size() - 1) % mpi::size() [, tag];
+	
+		if (mpi::rank() == 0) 
+			mpi::send( some::pod_t{..}, next [, tag]);
+	
+		while (true) { // passing the message around
+			some::pod_t message = mpi::receive<some::pod_t>(prev [, tag]);
+			if (mpi::rank() == 0) -- message.count; 
+	
+			mpi::send(message, next [, tag]);
+			if (message.count == 0) // exiting
+				break;
+		}
+		some::pod_t message; 
+		if (mpi::rank() == 0) // message passed by reference, will be updated
+			mpi::receive(message, prev, tag);
+		return 0; // mpi::finalize() gets called 
+	}
+
+
+</script></code></pre></section>
+<section>
+<h5>collective call with STL</h5>
+	<pre><code data-line-numbers="22-24|10-13|16"> <script type="text/template">	/*MIT licensed, Steven Varga 2021, Toronto, ON, Canada*/
+#include <mpi/all>
+int main(int argc, char* argv[]){
+	mpi::init(); // will register mpi::finalize with std::atexit
+	int total = elements_per_proc * world_size;
+
+	// scatter/gather: arguments may be passed in arbitrary order, `mpi::world` may be implicit
+	// `segment` uses RVO, with size == elements_per_proc, filled with the correct values for
+	//  each rank 
+	std::vector<float> segment = mpi::scatter(
+		std::vector<float>(total, 1.0)   // data being spread out
+		[,mpi::root{0}] [, mpi::world],  // optional values
+		[,mpi::count{5}] );              // blocks/rank
+
+	float partial_sum = std::reduce(segment.begin(), segment.end(), std::plus)
+	std::vector<float> result = mpi::gather(partial_sum); // world_size
+	if(rank != 0) // no participating ranks must return a valid container with zero elements
+		assert(result.size() == 0);
+}
+
+// original C function call
+MPI_Scatter(
+    void* send_data,  int send_count, MPI_Datatype send_datatype, void* recv_data,
+    int recv_count,  MPI_Datatype recv_datatype, int root, MPI_Comm communicator)
+</script></code></pre></section>
+<section>
+<h5>Interacting with HDF5 and PBLAS</h5>
+	<pre><code data-line-numbers="10|16-17,23|12|19-21"> <script type="text/template">
+#include <h5mpi>
+#include <h5cpp>
+...
+int main(int argc, char* argv[]){
+	mpi::init(argc, argv);  // registers mpi::finalize at exit
+	mpi::comm_t comm;       // defaults to MPI_WORLD
+	mpi::info info;         // similar to property lists 
+	size_t rank = mpi::rank(comm), size = mpi::size(comm);
+	auto fd = h5::open("container.h5", h5::fcpl, h5::mpiio({comm, info}) );
+	
+	arma::mat A(height, width, ... ), B(...), C(...);
+	// reads a block accroding to block cycling distribution or entire dataset
+	// into armadillo matrix, making it compatible with PBLAS, no scatter needed
+	// instead implicit MPI file IO calls behind the scenes distribute data to each rank
+	h5::read(fd, "dataset/A", A, h5::block_cyclic, h5::offset{..}, h5::count{..});
+	h5::read(fd, "dataset/B", B, h5::block_cyclic, h5::offset{..}, h5::count{..});
+	// parallel matrix matrix multiply, results in local C
+	PvGEMM('N', 'T', A.nrows, A.n_cols, REAL, 
+		A.memptr(), 0,0, desc_a, B.memptr(), 0,0, desc_b, REAL,
+		C.memptr(), 0, 0, desc_c);
+	// save result into an HDF5 container
+	h5::write(fd, "result/C", C, h5::block_cyclic);
+}
+</script></code></pre></section>
+
+
+<section data-markdown>
+<textarea data-template>
+## How can be done?
+Strong similarity between MPI and HDF5 systems allows significant code/pattern reuse from H5CPP project. While there are naming differences in concepts such as HDF5 property lists vs MPI_info, the main building blocks remain the same:
+
+- type system
+- static reflection
+- handles/identifier: RAII,
+- daisy chaining properties can easily be converted into setting MPI_info key/value pairs where needed
+- intuitive pythonic syntax with template metaprogramming
+- feature detection idiom based mechanism to support STL like containers: std::vector ...
+
+---
+## Features
+- static reflection based on LLVM/clang
+- PBLAS/SCALAPACK support: block cycling distribution
+- full interop with C MPI code: handles are binary equivalent
+- full interop with HDF5 systems with H5CPP by the same author
+- full linear algebra support for major linear algebra systems: armadillo, eigen3, ...
+- full STL like object support with feature detection idiom based approach
+- generative programming: only the necessary code is instantiated
+- RAII idiom to make sure resources are closed
+- H5CPP style structured exceptions: mpi::error::any rules them all
+- intuitive syntax
+---
+## How can you help
+---
+# thank you!
+</textarea>
+</section>
+			</div>
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="plugin/notes/notes.js"></script>
+		<script src="plugin/markdown/markdown.js"></script>
+		<script src="plugin/highlight/highlight.js"></script>
+		<!--script src="plugin/chalkboard/paper-core.min.js"></script-->
+		<script src="plugin/chalkboard/plugin.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				markdown: {smartypants: true},
+				keyboard: { 13: () => {// pause/resume time when Enter is pressed
+					ElapsedTimeBar.isPaused ? ElapsedTimeBar.resume() : ElapsedTimeBar.pause();
+				},	82: () => {// reset timer when 'r' is pressed
+					ElapsedTimeBar.reset();
+				}},
+				//keyboard: true,
+				allottedTime: 5 * 60 * 1000, // five minutes
+				progressBarHeight: 10,
+				barColor: '#AA2233',
+				pausedBarColor: '#C778DD',
+				hash: true,
+				controlsBackArrows: 'faded',
+				progress: true,
+				disableLayout: false,
+				touch: false,
+				center: false,
+				width: 1280,
+				height: 1024,
+				//autoSlide: 5000,
+				//loop: true,
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes, RevealChalkboard ],
+				chalkboard: {
+        boardmarkerWidth: 3,
+        chalkWidth: 2,
+        chalkEffect: .1,
+        storage: "storage.json",
+        src: "mpi.json",
+        readOnly: false,
+        messageType: 'broadcast',
+        toggleChalkboardButton: true,
+        toggleNotesButton: true,
+        colorButtons: true,
+        boardHandle: true,
+        transition: 800,
+        theme: "whiteboard",
+        background: [ 'rgba(127,127,127,.0)' , path + 'img/whiteboard.png' ],
+        grid: { color: 'rgb(50,50,10,0.1)', distance: 20, width: 1},
+        eraser: { src: path + 'img/sponge.png', radius: 20},
+		rememberColor: true,
+				},
+		dependencies: [
+			{ src: 'plugin/elapsed-time-bar/elapsed-time-bar.js'}
+  		],			
+		});
+		</script>
+	</body>
+</html>
