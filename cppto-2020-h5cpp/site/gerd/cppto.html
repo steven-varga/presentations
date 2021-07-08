@@ -1,0 +1,498 @@
+<<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide"><h1 class="title">H5CPP - Canada Dry</h1><h2 class="author">Steven Varga and Gerd Heber <br><small> Varga Consulting &amp; The HDF Group </small></h2><h2 class="date">C++TO 2020-06-30</h2>
+</section>
+
+<section>
+<section id="slide-org8fec989">
+<h2 id="org8fec989">HDF5 and the H5CPP <i>Program</i></h2>
+<blockquote >
+<p>
+"3: A plan or system under which action may be taken toward a goal"
+(Merriam-Webster)
+</p>
+</blockquote>
+
+<p>
+Cf. Felix Klein's Erlangen Program
+</p>
+
+</section>
+<section id="slide-orgd10a013">
+<h3 id="orgd10a013">HDF in a Nutshell</h3>
+
+<div class="figure">
+<p><img src="./img/hdf.jpg" alt="hdf.jpg" width="20%" />
+</p>
+</div>
+
+<blockquote >
+<p>
+"We believe that the management of large and complex data should be as
+simple as possible, but not simpler." (M. Folk, CEO)
+</p>
+</blockquote>
+
+<ul>
+<li>Mission-driven: a force for the common good</li>
+<li>A simple data model: Occam's razor</li>
+<li>Free Open Source Software: take it and do great things</li>
+<li>Technical excellence: performance, longevity, scalability</li>
+<li>Diverse community: stronger together</li>
+
+</ul>
+
+</section>
+<section id="slide-org95f3d03">
+<h3 id="org95f3d03">HDF5 - A File System in a File</h3>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">File System (Ext4)</th>
+<th scope="col" class="org-left">HDF5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Pathname</td>
+<td class="org-left">Pathname</td>
+</tr>
+
+<tr>
+<td class="org-left">Directory</td>
+<td class="org-left">Group</td>
+</tr>
+
+<tr>
+<td class="org-left">File</td>
+<td class="org-left">Dataset</td>
+</tr>
+
+<tr>
+<td class="org-left">Extended attribute</td>
+<td class="org-left">Attribute</td>
+</tr>
+
+<tr>
+<td class="org-left">Inode, extent, block</td>
+<td class="org-left">Compact, contiguous, chunked <i>layout</i></td>
+</tr>
+
+<tr>
+<td class="org-left">N/A</td>
+<td class="org-left">Datatype, dataspace (logical layout)</td>
+</tr>
+
+<tr>
+<td class="org-left">Linux VFS</td>
+<td class="org-left">Virtual File Layer</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b><b>Persistence</b></b> for scientists, engineers, and the general public who want
+performance <i>and</i> simplicity
+</p>
+
+</section>
+<section id="slide-org42ac10c">
+<h3 id="org42ac10c">HDF5 Transfer Functions</h3>
+<p>
+Transfers take place between dataspaces (logical layouts)
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left"><img src="./img/Dspace_fig6.jpeg" alt="Dspace_fig6.jpeg" /></td>
+<td class="org-left"><img src="./img/Dspace_fig7.jpeg" alt="Dspace_fig7.jpeg" /></td>
+</tr>
+
+<tr>
+<td class="org-left"><img src="./img/Dspace_fig8.jpeg" alt="Dspace_fig8.jpeg" /></td>
+<td class="org-left"><img src="./img/Dspace_fig9.jpeg" alt="Dspace_fig9.jpeg" /></td>
+</tr>
+</tbody>
+</table>
+
+<p>
+May include datatype transformations, filter operations, and field
+restrictions
+</p>
+
+</section>
+<section id="slide-org55c2330">
+<h3 id="org55c2330">HDF5 has a track record</h3>
+<ul>
+<li>De-facto standard for science and engineering data
+<ul>
+<li>In academia, enterprise, and government</li>
+
+</ul></li>
+<li>NASA's EOS system and many missions use HDF4 and HDF5</li>
+<li>DOE uses HDF5 in the simulation of the U.S. nuclear stockpile</li>
+<li>Many community and industry standards are based on it, e.g.,
+<ul>
+<li>CGNS (aerospace)</li>
+<li>Allotrope (pharma)</li>
+
+</ul></li>
+<li>Third parties have integrated HDF5 into their products, e.g.,
+<ul>
+<li>MathWorks MATLAB</li>
+<li>MSC Nastran (multidisciplinary structural analysis)</li>
+<li>netCDF-4, pandas, Keras, &#x2026;</li>
+
+</ul></li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-org49cf96a">
+<h2 id="org49cf96a">What's in it for Users (of HDF5)?</h2>
+<p>
+Should users know/care that they are using HDF5?
+</p>
+<ul>
+<li>No, they should focus on solving problem(s).</li>
+<li>Yes, insofar as they share our values and support us.</li>
+
+</ul>
+
+</section>
+<section id="slide-orge791aeb">
+<h3 id="orge791aeb">Typcial HDF5 users</h3>
+<ul>
+<li>Scientists and engineers doing numerical simulations on massively parallel
+systems (~100,000 cores)
+<ul>
+<li>General I/O</li>
+<li>Checkpoint/restart</li>
+
+</ul></li>
+<li>Experimenters acquiring large amounts of data at high rates, e.g., light
+sources, fusion, etc.</li>
+<li>Financial analysts backtesting trading algorithms</li>
+<li>Data scientists doing machine learning
+<ul>
+<li>Compact representations of training data and fast access</li>
+<li>Training state persistence</li>
+<li>Model deployment on edge devices</li>
+
+</ul></li>
+
+</ul>
+
+</section>
+<section id="slide-orgac80cd8">
+<h3 id="orgac80cd8">Pain points (for End-Users!)</h3>
+<div class="column" style="float:left; width: 30%">
+
+<div class="figure">
+<p><img src="./img/rc120.jpg" alt="rc120.jpg" height="30%," width="30%" />
+</p>
+</div>
+
+<p>
+HDF5 C-API
+</p>
+</div>
+
+<div class="column" style="float:right; width: 70%; valign: center;">
+<ul>
+<li><i>The C programming language does not have a sense of humor.</i> (Pieter
+Hintjens)</li>
+<li>Opaque, mutable pointers and handles</li>
+<li>Not much help from the compiler</li>
+<li>A lot of boilerplate code</li>
+<li>Last mile problems
+<ul>
+<li>No user data structures</li>
+
+</ul></li>
+<li>Too many knobs and dials
+<ul>
+<li>There is no hood to close!</li>
+
+</ul></li>
+<li><p>
+Customization over configuration
+</p>
+</div></li>
+
+</ul>
+
+</section>
+<section id="slide-orge1f8f65">
+<h3 id="orge1f8f65">The Transformative Power of H5CPP</h3>
+<div class="column" style="float:left; width: 50%">
+
+<div class="figure">
+<p><img src="./img/rc120.jpg" alt="rc120.jpg" height="25%," width="25%" />
+</p>
+</div>
+
+<p>
+HDF5
+</p>
+</div>
+
+<div class="column" style="float:right; width: 50%; valign: center;">
+
+<div class="figure">
+<p><img src="./img/flipper.jpg" alt="flipper.jpg" height="40%," width="40%" />
+</p>
+</div>
+
+<p>
+HDF5 default config. w/ H5CPP
+</p>
+
+<p>
+Focus on solving <span class="underline">your</span> problem!
+</p>
+
+<p>
+Four buttons (\(\Rightarrow\) CRUD)
+</p>
+</div>
+
+</section>
+<section id="slide-org2b9c53b">
+<h3 id="org2b9c53b">H5CPP in action</h3>
+<ul>
+<li>From a sequential to an MPI-parallel program</li>
+<li>The joy of Compiler assistance</li>
+
+</ul>
+
+</section>
+<section id="slide-org365fde5">
+<h4 id="org365fde5">Let's try this</h4>
+<aside class="notes">
+<p>
+In this figure, different colors and texture represent different
+dataset regions written by different MPI processes.
+</p>
+
+<p>
+The figure depicts the view from the vantage point of MPI process 1.
+</p>
+
+<p>
+Rank 1 will attempt to write a 2-by-5 block of data at offset
+(2,0) in the "global" 4-by-5 dataset.
+</p>
+
+</aside>
+
+<p>
+Let's create a 2D HDF5 dataset and write to it, <span class="underline">in parallel</span>!
+</p>
+
+
+<div class="figure">
+<p><img src="./img/parallel-hdf5-write.jpg" alt="parallel-hdf5-write.jpg" />
+</p>
+</div>
+
+<p>
+(View from MPI process 1.)
+</p>
+
+</section>
+<section id="slide-orgc209b38">
+<h4 id="orgc209b38">A sequential H5CPP program would look like this</h4>
+<aside class="notes">
+<p>
+With H5CPP this can be achieved with a few lines.
+</p>
+
+<p>
+A parallel version needs to be aware of an "MPI world,"
+and be adjusted for the specific MPI rank.
+</p>
+
+</aside>
+
+<div class="org-src-container">
+
+<pre><code class="C" > 1: ...
+ 2: // Create a vector and initialize
+ 3: std::vector&lt;double&gt; v(100);
+ 4: std::fill(std::begin(v), std::end(v), 1);
+ 5:
+ 6: // create an HDF5 file
+ 7: auto fd = h5::create("sequential.h5", H5F_ACC_TRUNC);
+ 8:
+ 9: // write a (2,50) block at offset (2,0) of a (size,50) array
+10: h5::write(fd, "dataset", v, h5::current_dims{2*size, 50},
+11:           h5::offset{2, 0}, h5::count{2, 50});
+12: ...
+</code></pre>
+</div>
+
+<p>
+A parallel version would run this program (adjusted for <code>rank</code>) on all
+processes of an MPI communicator.
+</p>
+
+</section>
+<section id="slide-orgfd6505c">
+<h4 id="orgfd6505c">A parallel H5CPP program is not much different</h4>
+<aside class="notes">
+<p>
+Only two minor changes make all the difference.
+</p>
+
+<p>
+We need to instruct the HDF5 library to use MPI-IO (line 9),
+and we need to account for the <code>rank</code> of the current MPI process (line 13).
+</p>
+
+<p>
+Note that we are writing from a vector (rank 1) to a 2D HDF5
+dataset. That's just convenient.
+</p>
+
+</aside>
+
+<div class="org-src-container">
+
+<pre><code class="C" > 1: ...
+ 2: // I'm an MPI rank in a size MPI_COMM_WORLD
+ 3: // Create a vector and initialize
+ 4: std::vector&lt;double&gt; v(100);
+ 5: std::fill(std::begin(v), std::end(v), rank);
+ 6:
+ 7: // create and open a file with MPI-IO
+ 8: auto fd = h5::create("parallel.h5", H5F_ACC_TRUNC,
+ 9:                      h5::mpiio({MPI_COMM_WORLD, MPI_INFO_NULL}));
+10:
+11: // write my data portion
+12: h5::write(fd, "dataset", v, h5::current_dims{2*size, 50},
+13:           h5::offset{2*rank, 0}, h5::count{2, 50});
+14: ...
+</code></pre>
+</div>
+<ul>
+<li>Each process writes a <code>(2,50)</code> block at offset <code>(2*rank,0)</code>.</li>
+<li>All "magic" happens in line 9 (plus the adjustment in line 13).</li>
+<li>It's OK to write a 1D array to a 2D array.</li>
+<li>Ditto for reading the data back.</li>
+
+</ul>
+
+</section>
+<section id="slide-org40e0cf9">
+<h4 id="org40e0cf9">Records I/O Without Compiler Assistance (41 lines)</h4>
+<div class="org-src-container">
+
+<pre><code class="C" > 1: #include "compound.h"
+ 2: #include "hdf5.h"
+ 3: int main(void) {
+ 4:   s1_t s1[LENGTH];
+ 5:   s2_t s2[LENGTH];
+ 6:   int  i;
+ 7:   for (i = 0; i&lt; LENGTH; i++) {
+ 8:       s1[i].a = i;
+ 9:       s1[i].b = i*i;
+10:       s1[i].c = 1./(i+1);
+11:   }
+12:   hid_t   s1_tid;
+13:   hid_t   s2_tid;
+14:   hid_t   fd, dataset, space;
+15:   hsize_t dim[] = {LENGTH};
+16:   space = H5Screate_simple(RANK, dim, NULL);
+17:   s1_tid = H5Tcreate (H5T_COMPOUND, sizeof(s1_t));
+18:   H5Tinsert(s1_tid, "a_name", HOFFSET(s1_t, a), H5T_NATIVE_INT);
+19:   H5Tinsert(s1_tid, "c_name", HOFFSET(s1_t, c), H5T_NATIVE_DOUBLE);
+20:   H5Tinsert(s1_tid, "b_name", HOFFSET(s1_t, b), H5T_NATIVE_FLOAT);
+21:   fd = H5Fcreate(H5FILE_NAME, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+22:   dataset = H5Dcreate2(fd, DATASETNAME, s1_tid, space, H5P_DEFAULT,
+23:                        H5P_DEFAULT, H5P_DEFAULT);
+24:   H5Dwrite(dataset, s1_tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, s1);
+25:   H5Tclose(s1_tid);
+26:   H5Sclose(space);
+27:   H5Dclose(dataset); ...
+28:   s2_tid = H5Tcreate(H5T_COMPOUND, sizeof(s2_t));
+29:   H5Tinsert(s2_tid, "c_name", HOFFSET(s2_t, c), H5T_NATIVE_DOUBLE);
+30:   H5Tinsert(s2_tid, "a_name", HOFFSET(s2_t, a), H5T_NATIVE_INT);
+31:   dataset = H5Dopen2(fd, DATASETNAME, H5P_DEFAULT);
+32:   H5Dread(dataset, s2_tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, s2);
+33:   printf("reading back data previously written:\n\t");
+34:   for (i = 0; i &lt; LENGTH; ++i)
+35:       printf("%g ", s2[i].c);
+36:   printf("\n");
+37:   H5Tclose(s2_tid);
+38:   H5Dclose(dataset);
+39:   H5Fclose(fd);
+40:   return 0;
+41: }
+</code></pre>
+</div>
+
+</section>
+<section id="slide-org0b3f597">
+<h4 id="org0b3f597">With Compiler Assistance</h4>
+<div class="org-src-container">
+
+<pre><code class="cpp" > 1: #include "compound.h"
+ 2: #include &lt;h5cpp/core&gt;
+ 3: #include "generated.h"
+ 4: #include &lt;h5cpp/io&gt;
+ 5: #include &lt;iostream&gt;
+ 6: #include &lt;algorithm&gt;
+ 7: int main() {
+ 8:   std::vector&lt;s1_t&gt; s1(LENGTH);
+ 9:   std::generate( std::begin(s1), std::end(s1), [i=-1]() mutable {
+10:     return s1_t{++i,static_cast&lt;float&gt;(i*i), 1.0/(i+1)};
+11:   });
+12:   auto fd = h5::create(H5FILE_NAME, H5F_ACC_TRUNC, h5::default_fcpl,
+13:                        h5::default_fapl);
+14:   h5::write(fd, DATASETNAME, s1);
+15:   auto data = h5::read&lt; std::vector&lt;s2_t&gt; &gt;(fd, DATASETNAME);
+16:   std::cout &lt;&lt; "reading back data previously written:\n\t";
+17:   for (auto r:data)
+18:       std::cout &lt;&lt; r.c &lt;&lt; " ";
+19:   std::cout &lt;&lt; std::endl;
+20:   return 0;
+21: }
+</code></pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-org2ed75bd">
+<h2 id="org2ed75bd">H5CPP from an HDF5 Point of View</h2>
+<ul>
+<li>Elegance of scripting languages w/o performance sacrifice</li>
+<li>Puts a hood on the C-API</li>
+<li>Flattens the learning curve: "no-API HDF5"</li>
+<li>Solves last-mile problems</li>
+<li>It closes a critical gap in the HDF5 ecosystem</li>
+
+</ul>
+</section>
+</section>
+</div>
+</div>
+

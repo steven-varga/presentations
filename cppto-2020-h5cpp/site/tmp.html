@@ -1,0 +1,164 @@
+<section  style="text-align: left;" >
+<h3>Putting all together:</h3>
+<aside class="notes">
+    tonight I am presenting H5CPP a scalable persistence for modern C++.
+    <ol>
+        <li>In this example we take an arbitrary complex <b>plain old data structure</b> type,</li>
+    <li>and save it in a tight event loop,</li>
+    <li>with a CRUD like operator,</li>
+    <li>into some dataset -- with some properties --.</li>
+    <li>Where the dataset is a part of some file format.</br>
+        In a few slides later we get to what Hierarchical Data Format or HDF5 is. </li>
+    <li>The generated.h header file doesn't exist yet, and is the main `character` of this talk</li>
+    </ol>
+
+</aside>
+<pre><code>01: #include &lth5cpp/core&gt
+02:     #include "generated.h"
+03: #include &lth5cpp/io&gt
+04: int main(int argc, char *argv[] ){
+05:	h5::fd_t fd = h5::create("lightning-talk-example.h5",H5F_ACC_TRUNC);
+06:     try {
+07:         h5::pt_t pt = h5::create&ltsn::example::complicated_struct_t&gt(fd, "dataset name",
+08:             h5::max_dims{H5S_UNLIMITED}, h5::chunk{1024} );
+09:         sn::example::complicated_struct_t event;
+10:         for(size_t i=0; i&ltsize; i++ )
+12:             h5::append(pt, event);
+13:     } catch ( const h5::error::any& e ){ ... }
+14: }
+01: namespace sn::example {
+02:	struct complicated_struct_t {
+03:		unsigned long idx;
+        ... };
+12: }
+</code></pre>
+<ul>
+  <li class="fragment" data-code-focus="9,14-18">take an arbitrary complex POD type</li>
+  <li class="fragment" data-code-focus="10">persist it within a tight event loop</li>
+  <li class="fragment" data-code-focus="11">with a CRUD like operator</li>
+  <li class="fragment" data-code-focus="7-8">into a dataset -- with some properties</li>
+  <li class="fragment" data-code-focus="5">where the dataset is part of the HDF5 container</li>
+  <li class="fragment" data-code-focus="2">generated.h doesn't exist yet</li>
+</ul>
+</section>
+<section data-markdown data-transition="zoom" data-separator-notes="^Note:" style="text-align: left;"><textarea data-template>
+
+### the following steps:
+1. Invoke LLVM/clang tooling based ```h5cpp``` compiler to complete the TU translation unit with
+the missing `generated.h` header file.
+```sh
+h5cpp  packettable.cpp -- $(CXXFLAGS) -Dgenerated.h
+```
+2. use your gnu c++, clang, pgi, msvc, intel, .. compiler
+```sh
+g++  -o packettable.o  $(CXXFLAGS) -c packettable.cpp
+```
+3. link against the libraries
+```sh
+g++ packet_table.o -lhdf5 -lz -ldl -lm -o packet_table
+```
+
+### Done!
+Note:
+The following simple steps fill in the missing details:
+
+- first run the source code transformation tool on the translation unit
+- then compile
+- and link against the dependencies -- which are minimal...
+</textarea></section>
+<section  style="text-align: left;" >
+	<h2>Example of POD struct</h2>
+<aside class="notes"><ol>
+    <li>In terms of robustness/usability</li>
+    <li>type aliasing is OK</li>
+    <li>you can nest namespaces</li>
+    <li>C++ elementary types are mapped to their native HDF5 equivalent </li>
+    <li>POD arrays upto 7 dimensions</li>
+    <li>They are recursively parsed</li>
+    </ol>
+</aside>
+	<pre><code>#ifndef  H5TEST_STRUCT_01 
+#define  H5TEST_STRUCT_01
+typedef size_t type_alias_t;
+namespace sn {
+ namespace other {
+    struct struct_t {                    // POD struct with nested namespace
+        type_alias_t                idx; // aliased type 
+        double              field_02[3]; // const array mapped 
+    };
+ }
+ namespace example {
+    struct complicated_struct_t {        // POD struct with nested namespace
+        type_alias_t                idx; // typedef type 
+        float               field_02[7];  // array of elementary types
+        sn::other::struct_t field_03[5]; // embedded struct 1D array
+        other::struct_t  field_04[3][8]; // array of arrays 
+    };
+ }
+}
+#endif
+</pre></code>
+<ul>
+  <li class="fragment" data-code-focus="3,7"> 
+  type aliasing is fine</li>
+  <li class="fragment" data-code-focus="4,5,10,11,18,19"> 
+  nested namespace are OK</li>
+  <li class="fragment" data-code-focus="7,3">
+  mapped to : <a href="https://support.hdfgroup.org/HDF5/doc1.6/UG/11_Datatypes.html" >H5T_NATIVE_ULONG</a></li>
+  <li class="fragment" data-code-focus="8">
+  H5Tarray_create(H5T_NATIVE_DOUBLE,1, ... ) </li>
+  <li class="fragment" data-code-focus="6-9,15">
+  first `other::struct_t` recursively parsed: type_hid_t = ... </li>
+  <li class="fragment" data-code-focus="16">
+  then the generated type is used: H5Tarray_create(type_hid_t, ...)  </li>
+</ul>
+</section>
+
+<section  style="text-align: left;" >
+<h3>And the final generated header file for HDF5 format</h3>
+<aside class="notes"><ol>
+    <li>include guards are present</li>
+    <li>all within h5 namespace</li>
+    <li>type mapping is based on template specialization</li>
+    <li>heterogeneous datatypes are recursively created in topological order</li>
+    <li>and the library promotes healthy resource management by closing handles not in use any longer</li>
+    </ol>
+</aside>
+<pre><code>#ifndef H5CPP_GUARD_kCTha
+#define H5CPP_GUARD_kCTha
+namespace h5 {
+    template&lt&gt hid_t inline register_struct&ltsn::example::complicated_struct_t&gt(){
+        hsize_t at_00_[] ={7};            hid_t at_00 = H5Tarray_create(H5T_NATIVE_FLOAT,1,at_00_);
+        hsize_t at_01_[] ={3};            hid_t at_01 = H5Tarray_create(H5T_NATIVE_DOUBLE,1,at_01_);
+
+        hid_t ct_00 = H5Tcreate(H5T_COMPOUND, sizeof (sn::other::struct_t));
+        H5Tinsert(ct_00, "idx",	HOFFSET(sn::other::struct_t,idx),H5T_NATIVE_ULONG);
+        H5Tinsert(ct_00, "field_02",	HOFFSET(sn::other::struct_t,field_02),at_01);
+        hsize_t at_02_[] ={5};            hid_t at_02 = H5Tarray_create(ct_00,1,at_02_);
+        hsize_t at_03_[] ={8};            hid_t at_03 = H5Tarray_create(ct_00,1,at_03_);
+        hsize_t at_04_[] ={3};            hid_t at_04 = H5Tarray_create(at_03,1,at_04_);
+
+        hid_t ct_01 = H5Tcreate(H5T_COMPOUND, sizeof (sn::example::complicated_struct_t));
+        H5Tinsert(ct_01, "idx",	HOFFSET(sn::example::complicated_struct_t,idx),H5T_NATIVE_ULONG);
+        H5Tinsert(ct_01, "field_02",	HOFFSET(sn::example::complicated_struct_t,field_02),at_00);
+        H5Tinsert(ct_01, "field_03",	HOFFSET(sn::example::complicated_struct_t,field_03),at_02);
+        H5Tinsert(ct_01, "field_04",	HOFFSET(sn::example::complicated_struct_t,field_04),at_04);
+
+        H5Tclose(at_00); H5Tclose(at_01); H5Tclose(ct_00); H5Tclose(at_02); H5Tclose(at_03);
+        H5Tclose(at_04); 
+
+        return ct_01;
+    };
+}
+H5CPP_REGISTER_STRUCT(sn::example::complicated_struct_t);
+#endif
+</code></pre>
+<ul>
+  <li class="fragment" data-code-focus="1-2,28">random include guards</li>
+  <li class="fragment" data-code-focus="3,26">within namespace </li>
+  <li class="fragment" data-code-focus="4,25">template specialization for h5::operators</li>
+  <li class="fragment" data-code-focus="5,17">compound types are recursively created</li>
+  <li class="fragment" data-code-focus="21,22">resources are closed to prevent leak</li>
+</ul>
+</section>
+

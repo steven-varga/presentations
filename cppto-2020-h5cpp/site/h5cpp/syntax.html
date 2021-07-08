@@ -1,0 +1,36 @@
+
+<section >
+	<h1>Syntax</h1>
+</section>
+<section data-markdown data-transition="zoom"  style="text-align: left;" data-separator-notes="^Note:"><textarea data-template>
+## Smaller block Transfer (size 30MB blocks):
+
+|MB/sec       |   write |      read |
+|-------------|---------|-----------|
+|h5cpp block  | 2457.41 |   3251.99 |
+|h5cpp packet | 1636.30 |   3151.15 |
+|posix IO     | 1443.59 |   5325.60 |
+
+Note:
+as well as capabilities to adjust the chunk size. Small chunks take advantage of OS level caching, acting as burst buffer
+-- think of minibatch training
+</textarea></section>
+
+<section  style="text-align: left;" >
+	<h3>Pythonic syntax at compile time </h3>
+<pre><code class="cpp">template&ltclass T&gt;
+h5::ds_t h5::create&lt;T&gt;( const h5::fd_t&amp; fd, const std::string&amp; name,
+    h5::current_dims{n,m,...},
+    h5::max_dims{i,k, ..}, // j > n, k > m ... or H5S_UNLIMITED</code></pre>
+<pre><code class="cpp">template&ltclass T&gt;
+h5::ds_t h5::read&lt;T&gt;( const h5::fd_t&amp; fd, const std::string&amp; name,
+    h5::current_dims{n,m,...},
+    h5::max_dims{i,k, ..}, // j > n, k > m ... or H5S_UNLIMITED</code></pre>
+
+
+</section>
+<!--pre><code class="cpp">
+template&ltclass T&gt;
+h5::create&lt;T&gt;( const h5::fd_t&amp; fd, const std::string&amp; name,
+</code></pre-->
+
